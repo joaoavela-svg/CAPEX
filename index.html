@@ -1,12 +1,909 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard Promédio BC</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard Promédio BC</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f4;color:#111;min-height:100vh}
+header{background:#FFE600;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.logo{background:#111;border-radius:8px;padding:5px 12px;font-weight:900;font-size:14px;color:#FFE600;letter-spacing:1px}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-title{font-weight:800;font-size:17px;letter-spacing:-.3px}
+.header-sub{font-size:10px;font-weight:600;letter-spacing:2px;opacity:.6;text-transform:uppercase}
+.currency-switch{background:rgba(0,0,0,.08);border-radius:999px;padding:3px;display:flex}
+.currency-switch button{padding:5px 14px;border-radius:999px;border:none;cursor:pointer;font-weight:800;font-size:12px;transition:all .2s}
+.currency-switch button.active{background:#111;color:#FFE600}
+.currency-switch button:not(.active){background:transparent;color:#333}
+main{max-width:1400px;margin:0 auto;padding:20px}
+.card{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:18px}
+.section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.filter-group label{display:block;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.filter-group select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#f9f9f9;font-size:13px;font-weight:600;cursor:pointer;outline:none}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);display:flex;gap:12px;align-items:flex-start}
+.kpi-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.kpi-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.kpi-value{font-size:19px;font-weight:900;line-height:1.1}
+.kpi-sub{font-size:11px;color:#aaa;margin-top:3px}
+.charts-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:18px}
+.chart-wrap{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.chart-title{font-weight:700;font-size:14px;margin-bottom:4px}
+.chart-sub{font-size:12px;color:#888;margin-bottom:14px}
+.pie-legend{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.pie-item{display:flex;align-items:center;justify-content:space-between;background:#f9f9f9;border-radius:10px;padding:7px 12px}
+.pie-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pie-name{font-size:12px;font-weight:700;margin-left:8px}
+.pie-val{font-size:12px;font-weight:800}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:#f9f9f9}
+th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;white-space:nowrap}
+th.right{text-align:right}
+tbody tr{border-top:1px solid #f4f4f4}
+tbody tr:nth-child(even){background:#fafafa}
+td{padding:7px 12px;white-space:nowrap}
+td.right{text-align:right}
+td.total{text-align:right;font-weight:900;background:#fffbe6;border-left:2px solid #FFE600}
+td.fc{font-weight:800}
+td.muted{color:#666;font-size:11px}
+.table-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #f0f0f0}
+.table-header .title{font-weight:700;font-size:14px}
+.badge{font-size:11px;color:#888;background:#f4f4f4;padding:3px 10px;border-radius:999px}
+.empty{text-align:center;padding:50px 20px}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty-title{font-weight:800;font-size:18px;margin-bottom:6px}
+.empty-sub{color:#888;font-size:13px}
+.table-overflow{overflow-x:auto}
+.btn-clear{background:rgba(0,0,0,.1);border:none;border-radius:999px;padding:6px 14px;font-weight:700;font-size:12px;cursor:pointer;display:none}
+.topn-group{display:flex;flex-direction:column;gap:5px}
+.topn-group label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px}
+.topn-group select{padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#f9f9f9;font-size:13px;font-weight:600;cursor:pointer;outline:none}
+footer{text-align:center;padding:18px;font-size:11px;color:#aaa}
+@media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">ML</div>
+    <div>
+      <div class="header-title">Dashboard Promédio BC</div>
+      <div class="header-sub">Mercado Envíos · CAPEX Management 2026</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="currency-switch">
+      <button class="active" onclick="setCurrency('BRL')">BRL</button>
+      <button onclick="setCurrency('USD')">USD</button>
+    </div>
+    <button class="btn-clear" id="btnClear" onclick="clearFilters()">✕ Limpar filtros</button>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="section-title">Filtros</div>
+    <div class="filters">
+      <div class="filter-group">
+        <label>Versão</label>
+        <select id="f-versao" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Cargo</label>
+        <select id="f-cargo" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="f-estado" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label>FC</label>
+        <select id="f-fc" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Tipologia</label>
+        <select id="f-tipologia" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="topn-group">
+        <label>Top N (gráfico)</label>
+        <select id="f-topn" onchange="applyFilters()">
+          <option value="10">Top 10</option>
+          <option value="15" selected>Top 15</option>
+          <option value="20">Top 20</option>
+          <option value="30">Top 30</option>
+          <option value="50">Top 50</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="empty-state" class="card empty" style="display:none">
+    <div class="empty-icon">🔍</div>
+    <div class="empty-title">Selecione ao menos um filtro</div>
+    <div class="empty-sub">Use os filtros acima para carregar as métricas e gráficos.</div>
+  </div>
+
+  <div id="dashboard-content">
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-icon" style="background:#FFE600">📊</div><div><div class="kpi-label">Média Geral</div><div class="kpi-value" id="kpi-avg">—</div><div class="kpi-sub" id="kpi-avg-sub">—</div></div></div>
+      <div class="kpi"><div class="kpi-icon" style="background:#111">⬆️</div><div><div class="kpi-label">Maior Promédio</div><div class="kpi-value" id="kpi-max">—</div><div class="kpi-sub" id="kpi-max-sub">—</div></div></div>
+      <div class="kpi"><div class="kpi-icon" style="background:#e5e7eb">⬇️</div><div><div class="kpi-label">Menor Promédio</div><div class="kpi-value" id="kpi-min">—</div><div class="kpi-sub" id="kpi-min-sub">—</div></div></div>
+      <div class="kpi"><div class="kpi-icon" style="background:#3b82f6">🏭</div><div><div class="kpi-label">Total Unidades</div><div class="kpi-value" id="kpi-count">—</div><div class="kpi-sub">no filtro selecionado</div></div></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-wrap">
+        <div class="chart-title">Comparativo por FC</div>
+        <div class="chart-sub">Custo total empilhado por unidade</div>
+        <canvas id="barChart"></canvas>
+      </div>
+      <div class="chart-wrap" style="display:flex;flex-direction:column">
+        <div class="chart-title">Composição Média</div>
+        <div class="chart-sub">Participação por categoria</div>
+        <canvas id="pieChart" style="max-height:220px"></canvas>
+        <div class="pie-legend" id="pieLegend"></div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div class="table-header">
+        <span class="title">Detalhamento por Unidade</span>
+        <span class="badge" id="table-badge">Taxa de câmbio: 5,50</span>
+      </div>
+      <div class="table-overflow">
+        <table>
+          <thead>
+            <tr>
+              <th>FC</th><th>Versão</th><th>Cargo</th><th>Estado</th><th>Tipologia</th>
+              <th class="right">Salários</th><th class="right">Benefícios</th><th class="right">Transporte</th><th class="right">Alimentação</th><th class="right">Total</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>© 2026 Mercado Envíos · Planeación y Control de Gestión de Capex · Última actualización 03/2026</footer>
+
+<script>
+const FC_MAP = {"BA01":{estado:"Bahia",tipologia:"Totable + Super"},"BA02":{estado:"Bahia",tipologia:"Non Totable + H&B"},"BA03":{estado:"Bahia",tipologia:"Totable"},"CE01":{estado:"Ceará",tipologia:"Totable + Non Totable (Metro)"},"DF01":{estado:"Distrito Federal",tipologia:"Totable (Metro)"},"DF02":{estado:"Distrito Federal",tipologia:"Totable + Non Totable"},"DF03":{estado:"Distrito Federal",tipologia:"Totable + Non Totable"},"ES01":{estado:"Espírito Santo",tipologia:"Totable + Non Totable (Metro)"},"MG01":{estado:"Minas Gerais",tipologia:"Totable + Non Totable"},"MG02":{estado:"Minas Gerais",tipologia:"Totable + Non Totable"},"MG03":{estado:"Minas Gerais",tipologia:"Non Totable"},"MG04":{estado:"Minas Gerais",tipologia:"Non Totable"},"PE01":{estado:"Pernambuco",tipologia:"Totable + Non Totable"},"PR01":{estado:"Paraná",tipologia:"Totable + Non Totable"},"RC01":{estado:"São Paulo",tipologia:"Receiving"},"RC02":{estado:"São Paulo",tipologia:"Receiving"},"RC03":{estado:"São Paulo",tipologia:"Receiving"},"RC04":{estado:"São Paulo",tipologia:"Receiving"},"RJ01":{estado:"Rio de Janeiro",tipologia:"Totable + Non Totable (Metro)"},"RJ02":{estado:"Rio de Janeiro",tipologia:"Totable + Non Totable"},"RS01":{estado:"Rio Grande do Sul",tipologia:"Totable (Metro)"},"RS02":{estado:"Rio Grande do Sul",tipologia:"Totable + Non Totable"},"RS03":{estado:"Rio Grande do Sul",tipologia:"Non Totable"},"RT01":{estado:"São Paulo",tipologia:"Triage Center"},"SC02":{estado:"Santa Catarina",tipologia:"Totable + Non Totable"},"SP02":{estado:"São Paulo",tipologia:"Totable + Non Totable"},"SP04":{estado:"São Paulo",tipologia:"Totable"},"SP06":{estado:"São Paulo",tipologia:"Totable + Super"},"SP09":{estado:"São Paulo",tipologia:"H&B"},"SP10":{estado:"São Paulo",tipologia:"Non Totable"},"SP11":{estado:"São Paulo",tipologia:"Non Totable"},"SP12":{estado:"São Paulo",tipologia:"Totable"},"SP14":{estado:"São Paulo",tipologia:"Totable"},"SP15":{estado:"São Paulo",tipologia:"Totable"},"SP16":{estado:"São Paulo",tipologia:"Super"},"SP17":{estado:"São Paulo",tipologia:"Super"},"SP18":{estado:"São Paulo",tipologia:"Totable"},"SP19":{estado:"São Paulo",tipologia:"Totable"},"SP21":{estado:"São Paulo",tipologia:"Non Totable"},"SP24":{estado:"São Paulo",tipologia:"Totable + Non Totable (Metro)"},"SP25":{estado:"São Paulo",tipologia:"Totable"},"SP26":{estado:"São Paulo",tipologia:"Totable"},"SP27":{estado:"São Paulo",tipologia:"Totable"},"SP28":{estado:"São Paulo",tipologia:"Totable + Non Totable (Metro)"},"SP29":{estado:"São Paulo",tipologia:"H&B"},"SP30":{estado:"São Paulo",tipologia:"Totable + Non Totable (Metro)"},"SP31":{estado:"São Paulo",tipologia:"Totable"},"SP33":{estado:"São Paulo",tipologia:"Totable"}};
+
+const RAW=`Plan 2026|BA01|Representante de Envios|Salários|3416
+Plan 2026|BA01|Representante de Envios|Beneficios|1162
+Plan 2026|BA01|Representante de Envios|Fretado|829
+Plan 2026|BA01|Representante de Envios|Refeição|568
+Plan 2026|BA02|Representante de Envios|Salários|3992
+Plan 2026|BA02|Representante de Envios|Beneficios|1162
+Plan 2026|BA02|Representante de Envios|Fretado|1471
+Plan 2026|BA02|Representante de Envios|Refeição|751
+Plan 2026|DF01|Representante de Envios|Salários|4006
+Plan 2026|DF01|Representante de Envios|Beneficios|1602
+Plan 2026|DF01|Representante de Envios|Fretado|1259
+Plan 2026|DF01|Representante de Envios|Refeição|455
+Plan 2026|MG01|Representante de Envios|Salários|4564
+Plan 2026|MG01|Representante de Envios|Beneficios|946
+Plan 2026|MG01|Representante de Envios|Fretado|1200
+Plan 2026|MG01|Representante de Envios|Refeição|639
+Plan 2026|MG02|Representante de Envios|Salários|4028
+Plan 2026|MG02|Representante de Envios|Beneficios|946
+Plan 2026|MG02|Representante de Envios|Fretado|768
+Plan 2026|MG02|Representante de Envios|Refeição|583
+Plan 2026|PE01|Representante de Envios|Salários|3104
+Plan 2026|PE01|Representante de Envios|Beneficios|1259
+Plan 2026|PE01|Representante de Envios|Fretado|804
+Plan 2026|PE01|Representante de Envios|Refeição|578
+Plan 2026|PR01|Representante de Envios|Salários|4161
+Plan 2026|PR01|Representante de Envios|Beneficios|946
+Plan 2026|PR01|Representante de Envios|Fretado|1035
+Plan 2026|PR01|Representante de Envios|Refeição|607
+Plan 2026|RC01|Representante de Envios|Salários|4334
+Plan 2026|RC01|Representante de Envios|Beneficios|946
+Plan 2026|RC01|Representante de Envios|Fretado|1012
+Plan 2026|RC01|Representante de Envios|Refeição|796
+Plan 2026|RJ02|Representante de Envios|Salários|3308
+Plan 2026|RJ02|Representante de Envios|Beneficios|1372
+Plan 2026|RJ02|Representante de Envios|Fretado|821
+Plan 2026|RJ02|Representante de Envios|Refeição|648
+Plan 2026|RS01|Representante de Envios|Salários|3542
+Plan 2026|RS01|Representante de Envios|Beneficios|3060
+Plan 2026|RS01|Representante de Envios|Fretado|2044
+Plan 2026|RS01|Representante de Envios|Refeição|892
+Plan 2026|RT01|Representante de Envios|Salários|3710
+Plan 2026|RT01|Representante de Envios|Beneficios|946
+Plan 2026|RT01|Representante de Envios|Fretado|1218
+Plan 2026|RT01|Representante de Envios|Refeição|738
+Plan 2026|SC02|Representante de Envios|Salários|4161
+Plan 2026|SC02|Representante de Envios|Beneficios|946
+Plan 2026|SC02|Representante de Envios|Fretado|745
+Plan 2026|SC02|Representante de Envios|Refeição|539
+Plan 2026|SP02|Representante de Envios|Salários|3874
+Plan 2026|SP02|Representante de Envios|Beneficios|946
+Plan 2026|SP02|Representante de Envios|Fretado|1218
+Plan 2026|SP02|Representante de Envios|Refeição|734
+Plan 2026|SP04|Representante de Envios|Salários|4015
+Plan 2026|SP04|Representante de Envios|Beneficios|946
+Plan 2026|SP04|Representante de Envios|Fretado|1327
+Plan 2026|SP04|Representante de Envios|Refeição|547
+Plan 2026|SP06|Representante de Envios|Salários|4007
+Plan 2026|SP06|Representante de Envios|Beneficios|946
+Plan 2026|SP06|Representante de Envios|Fretado|1033
+Plan 2026|SP06|Representante de Envios|Refeição|618
+Plan 2026|SP09|Representante de Envios|Salários|4945
+Plan 2026|SP09|Representante de Envios|Beneficios|946
+Plan 2026|SP09|Representante de Envios|Fretado|1641
+Plan 2026|SP09|Representante de Envios|Refeição|1695
+Plan 2026|SP10|Representante de Envios|Salários|4197
+Plan 2026|SP10|Representante de Envios|Beneficios|946
+Plan 2026|SP10|Representante de Envios|Fretado|866
+Plan 2026|SP10|Representante de Envios|Refeição|622
+Plan 2026|SP11|Representante de Envios|Salários|4541
+Plan 2026|SP11|Representante de Envios|Beneficios|946
+Plan 2026|SP11|Representante de Envios|Fretado|1065
+Plan 2026|SP11|Representante de Envios|Refeição|704
+Plan 2026|SP14|Representante de Envios|Salários|4398
+Plan 2026|SP14|Representante de Envios|Beneficios|946
+Plan 2026|SP14|Representante de Envios|Fretado|1251
+Plan 2026|SP14|Representante de Envios|Refeição|727
+Plan 2026|SP15|Representante de Envios|Salários|3914
+Plan 2026|SP15|Representante de Envios|Beneficios|946
+Plan 2026|SP15|Representante de Envios|Fretado|1658
+Plan 2026|SP15|Representante de Envios|Refeição|939
+Plan 2026|SP18|Representante de Envios|Salários|4069
+Plan 2026|SP18|Representante de Envios|Beneficios|946
+Plan 2026|SP18|Representante de Envios|Fretado|1008
+Plan 2026|SP18|Representante de Envios|Refeição|694
+Plan 2026|SP19|Representante de Envios|Salários|4069
+Plan 2026|SP19|Representante de Envios|Beneficios|946
+Plan 2026|SP19|Representante de Envios|Fretado|1010
+Plan 2026|SP19|Representante de Envios|Refeição|664
+Plan 2026|SP21|Representante de Envios|Salários|4064
+Plan 2026|SP21|Representante de Envios|Beneficios|946
+Plan 2026|SP21|Representante de Envios|Fretado|1046
+Plan 2026|SP21|Representante de Envios|Refeição|722
+Plan 2026|SP24|Representante de Envios|Salários|5276
+Plan 2026|SP24|Representante de Envios|Beneficios|0
+Plan 2026|SP24|Representante de Envios|Fretado|1014
+Plan 2026|SP24|Representante de Envios|Refeição|1158
+Plan 2026|BA01|Team Leader|Salários|10379
+Plan 2026|BA01|Team Leader|Beneficios|5267
+Plan 2026|BA01|Team Leader|Fretado|829
+Plan 2026|BA01|Team Leader|Refeição|568
+Plan 2026|BA02|Team Leader|Salários|8548
+Plan 2026|BA02|Team Leader|Beneficios|5267
+Plan 2026|BA02|Team Leader|Fretado|1471
+Plan 2026|BA02|Team Leader|Refeição|751
+Plan 2026|DF01|Team Leader|Salários|11538
+Plan 2026|DF01|Team Leader|Beneficios|3155
+Plan 2026|DF01|Team Leader|Fretado|1259
+Plan 2026|DF01|Team Leader|Refeição|455
+Plan 2026|MG01|Team Leader|Salários|13061
+Plan 2026|MG01|Team Leader|Beneficios|4063
+Plan 2026|MG01|Team Leader|Fretado|1200
+Plan 2026|MG01|Team Leader|Refeição|639
+Plan 2026|MG02|Team Leader|Salários|13061
+Plan 2026|MG02|Team Leader|Beneficios|4063
+Plan 2026|MG02|Team Leader|Fretado|768
+Plan 2026|MG02|Team Leader|Refeição|583
+Plan 2026|PE01|Team Leader|Salários|11576
+Plan 2026|PE01|Team Leader|Beneficios|4827
+Plan 2026|PE01|Team Leader|Fretado|804
+Plan 2026|PE01|Team Leader|Refeição|578
+Plan 2026|PR01|Team Leader|Salários|11568
+Plan 2026|PR01|Team Leader|Beneficios|4063
+Plan 2026|PR01|Team Leader|Fretado|1035
+Plan 2026|PR01|Team Leader|Refeição|607
+Plan 2026|RC01|Team Leader|Salários|13357
+Plan 2026|RC01|Team Leader|Beneficios|4063
+Plan 2026|RC01|Team Leader|Fretado|1012
+Plan 2026|RC01|Team Leader|Refeição|796
+Plan 2026|RC02|Team Leader|Salários|13548
+Plan 2026|RC02|Team Leader|Beneficios|4063
+Plan 2026|RC02|Team Leader|Fretado|747
+Plan 2026|RC02|Team Leader|Refeição|924
+Plan 2026|RC03|Team Leader|Salários|13061
+Plan 2026|RC03|Team Leader|Beneficios|4063
+Plan 2026|RC03|Team Leader|Fretado|973
+Plan 2026|RC03|Team Leader|Refeição|0
+Plan 2026|RJ02|Team Leader|Salários|12069
+Plan 2026|RJ02|Team Leader|Beneficios|2197
+Plan 2026|RJ02|Team Leader|Fretado|821
+Plan 2026|RJ02|Team Leader|Refeição|648
+Plan 2026|RS01|Team Leader|Salários|11506
+Plan 2026|RS01|Team Leader|Beneficios|2851
+Plan 2026|RS01|Team Leader|Fretado|2044
+Plan 2026|RS01|Team Leader|Refeição|892
+Plan 2026|RT01|Team Leader|Salários|14086
+Plan 2026|RT01|Team Leader|Beneficios|4063
+Plan 2026|RT01|Team Leader|Fretado|1218
+Plan 2026|RT01|Team Leader|Refeição|738
+Plan 2026|SC02|Team Leader|Salários|13610
+Plan 2026|SC02|Team Leader|Beneficios|4063
+Plan 2026|SC02|Team Leader|Fretado|745
+Plan 2026|SC02|Team Leader|Refeição|539
+Plan 2026|SP02|Team Leader|Salários|13610
+Plan 2026|SP02|Team Leader|Beneficios|4063
+Plan 2026|SP02|Team Leader|Fretado|1218
+Plan 2026|SP02|Team Leader|Refeição|734
+Plan 2026|SP04|Team Leader|Salários|13541
+Plan 2026|SP04|Team Leader|Beneficios|4063
+Plan 2026|SP04|Team Leader|Fretado|1327
+Plan 2026|SP04|Team Leader|Refeição|547
+Plan 2026|SP06|Team Leader|Salários|13061
+Plan 2026|SP06|Team Leader|Beneficios|4063
+Plan 2026|SP06|Team Leader|Fretado|1033
+Plan 2026|SP06|Team Leader|Refeição|618
+Plan 2026|SP09|Team Leader|Salários|11131
+Plan 2026|SP09|Team Leader|Beneficios|4063
+Plan 2026|SP09|Team Leader|Fretado|1641
+Plan 2026|SP09|Team Leader|Refeição|1695
+Plan 2026|SP10|Team Leader|Salários|13061
+Plan 2026|SP10|Team Leader|Beneficios|4063
+Plan 2026|SP10|Team Leader|Fretado|866
+Plan 2026|SP10|Team Leader|Refeição|622
+Plan 2026|SP11|Team Leader|Salários|13061
+Plan 2026|SP11|Team Leader|Beneficios|4063
+Plan 2026|SP11|Team Leader|Fretado|1065
+Plan 2026|SP11|Team Leader|Refeição|704
+Plan 2026|SP14|Team Leader|Salários|14981
+Plan 2026|SP14|Team Leader|Beneficios|4063
+Plan 2026|SP14|Team Leader|Fretado|1251
+Plan 2026|SP14|Team Leader|Refeição|727
+Plan 2026|SP15|Team Leader|Salários|14317
+Plan 2026|SP15|Team Leader|Beneficios|4063
+Plan 2026|SP15|Team Leader|Fretado|1658
+Plan 2026|SP15|Team Leader|Refeição|939
+Plan 2026|SP18|Team Leader|Salários|14602
+Plan 2026|SP18|Team Leader|Beneficios|4063
+Plan 2026|SP18|Team Leader|Fretado|1008
+Plan 2026|SP18|Team Leader|Refeição|694
+Plan 2026|SP19|Team Leader|Salários|14602
+Plan 2026|SP19|Team Leader|Beneficios|4063
+Plan 2026|SP19|Team Leader|Fretado|1010
+Plan 2026|SP19|Team Leader|Refeição|664
+Plan 2026|SP24|Team Leader|Salários|11176
+Plan 2026|SP24|Team Leader|Beneficios|0
+Plan 2026|SP24|Team Leader|Fretado|1014
+Plan 2026|SP24|Team Leader|Refeição|1158
+Plan 2026|MG03|Team Leader|Salários|13061
+Plan 2026|MG03|Team Leader|Beneficios|4063
+Plan 2026|MG03|Team Leader|Fretado|1400
+Plan 2026|MG03|Team Leader|Refeição|559
+Plan 2026|MG04|Team Leader|Salários|13061
+Plan 2026|MG04|Team Leader|Beneficios|4063
+Plan 2026|MG04|Team Leader|Fretado|1400
+Plan 2026|MG04|Team Leader|Refeição|559
+Plan 2026|SP21|Team Leader|Salários|14500
+Plan 2026|SP21|Team Leader|Beneficios|4063
+Plan 2026|SP21|Team Leader|Fretado|1046
+Plan 2026|SP21|Team Leader|Refeição|722
+Plan 2026|SP25|Team Leader|Salários|14317
+Plan 2026|SP25|Team Leader|Beneficios|4063
+Plan 2026|SP25|Team Leader|Fretado|1009
+Plan 2026|SP25|Team Leader|Refeição|921
+Plan 2026|SP26|Team Leader|Salários|14317
+Plan 2026|SP26|Team Leader|Beneficios|4063
+Plan 2026|SP26|Team Leader|Fretado|962
+Plan 2026|SP26|Team Leader|Refeição|1050
+Plan 2026|SP27|Team Leader|Salários|14317
+Plan 2026|SP27|Team Leader|Beneficios|4063
+Plan 2026|SP27|Team Leader|Fretado|1693
+Plan 2026|SP27|Team Leader|Refeição|1136
+Plan 2026|SP28|Team Leader|Salários|11176
+Plan 2026|SP28|Team Leader|Beneficios|3155
+Plan 2026|SP28|Team Leader|Fretado|1076
+Plan 2026|SP28|Team Leader|Refeição|1179
+Plan 2026|ES01|Team Leader|Salários|11176
+Plan 2026|ES01|Team Leader|Beneficios|3155
+Plan 2026|ES01|Team Leader|Fretado|1076
+Plan 2026|ES01|Team Leader|Refeição|1179
+Plan 2026|SP29|Team Leader|Salários|11131
+Plan 2026|SP29|Team Leader|Beneficios|4063
+Plan 2026|SP29|Team Leader|Fretado|1887
+Plan 2026|SP29|Team Leader|Refeição|1388
+Plan 2026|SP30|Team Leader|Salários|11506
+Plan 2026|SP30|Team Leader|Beneficios|2851
+Plan 2026|SP30|Team Leader|Fretado|1076
+Plan 2026|SP30|Team Leader|Refeição|2004
+Plan 2026|SP31|Team Leader|Salários|14317
+Plan 2026|SP31|Team Leader|Beneficios|4063
+Plan 2026|SP31|Team Leader|Fretado|920
+Plan 2026|SP31|Team Leader|Refeição|1020
+Plan 2026|DF02|Team Leader|Salários|11506
+Plan 2026|DF02|Team Leader|Beneficios|2851
+Plan 2026|DF02|Team Leader|Fretado|1076
+Plan 2026|DF02|Team Leader|Refeição|1179
+Plan 2026|SP33|Team Leader|Salários|14317
+Plan 2026|SP33|Team Leader|Beneficios|4063
+Plan 2026|SP33|Team Leader|Fretado|920
+Plan 2026|SP33|Team Leader|Refeição|1020
+Plan 2026|DF03|Team Leader|Salários|11538
+Plan 2026|DF03|Team Leader|Beneficios|3155
+Plan 2026|DF03|Team Leader|Fretado|1259
+Plan 2026|DF03|Team Leader|Refeição|455
+2+10|BA01|Representante de Envios|Salários|3444
+2+10|BA01|Representante de Envios|Beneficios|1162
+2+10|BA01|Representante de Envios|Fretado|804
+2+10|BA01|Representante de Envios|Refeição|676
+2+10|BA02|Representante de Envios|Salários|3992
+2+10|BA02|Representante de Envios|Beneficios|1162
+2+10|BA02|Representante de Envios|Fretado|1188
+2+10|BA02|Representante de Envios|Refeição|1126
+2+10|MG01|Representante de Envios|Salários|4564
+2+10|MG01|Representante de Envios|Beneficios|946
+2+10|MG01|Representante de Envios|Fretado|1400
+2+10|MG01|Representante de Envios|Refeição|559
+2+10|MG02|Representante de Envios|Salários|4028
+2+10|MG02|Representante de Envios|Beneficios|946
+2+10|MG02|Representante de Envios|Fretado|764
+2+10|MG02|Representante de Envios|Refeição|582
+2+10|PE01|Representante de Envios|Salários|3104
+2+10|PE01|Representante de Envios|Beneficios|1259
+2+10|PE01|Representante de Envios|Fretado|841
+2+10|PE01|Representante de Envios|Refeição|837
+2+10|PR01|Representante de Envios|Salários|3673
+2+10|PR01|Representante de Envios|Beneficios|946
+2+10|PR01|Representante de Envios|Fretado|955
+2+10|PR01|Representante de Envios|Refeição|841
+2+10|RC01|Representante de Envios|Salários|4312
+2+10|RC01|Representante de Envios|Beneficios|946
+2+10|RC01|Representante de Envios|Fretado|1001
+2+10|RC01|Representante de Envios|Refeição|626
+2+10|RC02|Representante de Envios|Salários|4046
+2+10|RC02|Representante de Envios|Beneficios|946
+2+10|RC02|Representante de Envios|Fretado|747
+2+10|RC02|Representante de Envios|Refeição|924
+2+10|RC03|Representante de Envios|Salários|4029
+2+10|RC03|Representante de Envios|Beneficios|946
+2+10|RC03|Representante de Envios|Fretado|973
+2+10|RC03|Representante de Envios|Refeição|0
+2+10|RJ02|Representante de Envios|Salários|3308
+2+10|RJ02|Representante de Envios|Beneficios|1372
+2+10|RJ02|Representante de Envios|Fretado|674
+2+10|RJ02|Representante de Envios|Refeição|913
+2+10|RT01|Representante de Envios|Salários|3710
+2+10|RT01|Representante de Envios|Beneficios|946
+2+10|RT01|Representante de Envios|Fretado|1294
+2+10|RT01|Representante de Envios|Refeição|684
+2+10|SC02|Representante de Envios|Salários|4161
+2+10|SC02|Representante de Envios|Beneficios|946
+2+10|SC02|Representante de Envios|Fretado|694
+2+10|SC02|Representante de Envios|Refeição|614
+2+10|SP02|Representante de Envios|Salários|3735
+2+10|SP02|Representante de Envios|Beneficios|946
+2+10|SP02|Representante de Envios|Fretado|1373
+2+10|SP02|Representante de Envios|Refeição|779
+2+10|SP04|Representante de Envios|Salários|3909
+2+10|SP04|Representante de Envios|Beneficios|946
+2+10|SP04|Representante de Envios|Fretado|1432
+2+10|SP04|Representante de Envios|Refeição|577
+2+10|SP06|Representante de Envios|Salários|4007
+2+10|SP06|Representante de Envios|Beneficios|946
+2+10|SP06|Representante de Envios|Fretado|951
+2+10|SP06|Representante de Envios|Refeição|596
+2+10|SP09|Representante de Envios|Salários|4390
+2+10|SP09|Representante de Envios|Beneficios|946
+2+10|SP09|Representante de Envios|Fretado|1887
+2+10|SP09|Representante de Envios|Refeição|1388
+2+10|SP10|Representante de Envios|Salários|4125
+2+10|SP10|Representante de Envios|Beneficios|946
+2+10|SP10|Representante de Envios|Fretado|938
+2+10|SP10|Representante de Envios|Refeição|779
+2+10|SP11|Representante de Envios|Salários|4085
+2+10|SP11|Representante de Envios|Beneficios|946
+2+10|SP11|Representante de Envios|Fretado|1244
+2+10|SP11|Representante de Envios|Refeição|786
+2+10|SP14|Representante de Envios|Salários|4888
+2+10|SP14|Representante de Envios|Beneficios|946
+2+10|SP14|Representante de Envios|Fretado|1563
+2+10|SP14|Representante de Envios|Refeição|765
+2+10|SP15|Representante de Envios|Salários|3439
+2+10|SP15|Representante de Envios|Beneficios|946
+2+10|SP15|Representante de Envios|Fretado|1482
+2+10|SP15|Representante de Envios|Refeição|1188
+2+10|SP18|Representante de Envios|Salários|4117
+2+10|SP18|Representante de Envios|Beneficios|946
+2+10|SP18|Representante de Envios|Fretado|1008
+2+10|SP18|Representante de Envios|Refeição|747
+2+10|SP19|Representante de Envios|Salários|4014
+2+10|SP19|Representante de Envios|Beneficios|946
+2+10|SP19|Representante de Envios|Fretado|1021
+2+10|SP19|Representante de Envios|Refeição|694
+2+10|SP21|Representante de Envios|Salários|4064
+2+10|SP21|Representante de Envios|Beneficios|946
+2+10|SP21|Representante de Envios|Fretado|1144
+2+10|SP21|Representante de Envios|Refeição|791
+2+10|SP25|Representante de Envios|Salários|4169
+2+10|SP25|Representante de Envios|Beneficios|946
+2+10|SP25|Representante de Envios|Fretado|1009
+2+10|SP25|Representante de Envios|Refeição|921
+2+10|SP24|Representante de Envios|Salários|5276
+2+10|SP24|Representante de Envios|Beneficios|1602
+2+10|SP24|Representante de Envios|Fretado|1076
+2+10|SP24|Representante de Envios|Refeição|1179
+2+10|SP26|Representante de Envios|Salários|4169
+2+10|SP26|Representante de Envios|Beneficios|946
+2+10|SP26|Representante de Envios|Fretado|962
+2+10|SP26|Representante de Envios|Refeição|1050
+2+10|SP27|Representante de Envios|Salários|3914
+2+10|SP27|Representante de Envios|Beneficios|946
+2+10|SP27|Representante de Envios|Fretado|1693
+2+10|SP27|Representante de Envios|Refeição|1136
+2+10|SP28|Representante de Envios|Salários|5276
+2+10|SP28|Representante de Envios|Beneficios|1602
+2+10|SP28|Representante de Envios|Fretado|1076
+2+10|SP28|Representante de Envios|Refeição|1179
+2+10|ES01|Representante de Envios|Salários|5276
+2+10|ES01|Representante de Envios|Beneficios|1602
+2+10|ES01|Representante de Envios|Fretado|1076
+2+10|ES01|Representante de Envios|Refeição|1179
+2+10|SP29|Representante de Envios|Salários|4945
+2+10|SP29|Representante de Envios|Beneficios|946
+2+10|SP29|Representante de Envios|Fretado|1887
+2+10|SP29|Representante de Envios|Refeição|1388
+2+10|SP30|Representante de Envios|Salários|3565
+2+10|SP30|Representante de Envios|Beneficios|3060
+2+10|SP30|Representante de Envios|Fretado|1076
+2+10|SP30|Representante de Envios|Refeição|2004
+2+10|SP31|Representante de Envios|Salários|3914
+2+10|SP31|Representante de Envios|Beneficios|946
+2+10|SP31|Representante de Envios|Fretado|920
+2+10|SP31|Representante de Envios|Refeição|1020
+2+10|DF02|Representante de Envios|Salários|3565
+2+10|DF02|Representante de Envios|Beneficios|3060
+2+10|DF02|Representante de Envios|Fretado|1076
+2+10|DF02|Representante de Envios|Refeição|1179
+2+10|SP33|Representante de Envios|Salários|3914
+2+10|SP33|Representante de Envios|Beneficios|946
+2+10|SP33|Representante de Envios|Fretado|920
+2+10|SP33|Representante de Envios|Refeição|1020
+2+10|BA01|Team Leader|Salários|10379
+2+10|BA01|Team Leader|Beneficios|5267
+2+10|BA01|Team Leader|Fretado|804
+2+10|BA01|Team Leader|Refeição|676
+2+10|BA02|Team Leader|Salários|8548
+2+10|BA02|Team Leader|Beneficios|5267
+2+10|BA02|Team Leader|Fretado|1188
+2+10|BA02|Team Leader|Refeição|1126
+2+10|MG01|Team Leader|Salários|13061
+2+10|MG01|Team Leader|Beneficios|4063
+2+10|MG01|Team Leader|Fretado|1400
+2+10|MG01|Team Leader|Refeição|559
+2+10|MG02|Team Leader|Salários|13061
+2+10|MG02|Team Leader|Beneficios|4063
+2+10|MG02|Team Leader|Fretado|764
+2+10|MG02|Team Leader|Refeição|582
+2+10|MG03|Team Leader|Salários|13061
+2+10|MG03|Team Leader|Beneficios|4063
+2+10|MG03|Team Leader|Fretado|1400
+2+10|MG03|Team Leader|Refeição|559
+2+10|MG04|Team Leader|Salários|13061
+2+10|MG04|Team Leader|Beneficios|4063
+2+10|MG04|Team Leader|Fretado|1400
+2+10|MG04|Team Leader|Refeição|559
+2+10|PE01|Team Leader|Salários|11576
+2+10|PE01|Team Leader|Beneficios|4827
+2+10|PE01|Team Leader|Fretado|841
+2+10|PE01|Team Leader|Refeição|837
+2+10|PR01|Team Leader|Salários|11568
+2+10|PR01|Team Leader|Beneficios|4063
+2+10|PR01|Team Leader|Fretado|955
+2+10|PR01|Team Leader|Refeição|841
+2+10|RC01|Team Leader|Salários|12312
+2+10|RC01|Team Leader|Beneficios|4063
+2+10|RC01|Team Leader|Fretado|1001
+2+10|RC01|Team Leader|Refeição|626
+2+10|RC02|Team Leader|Salários|12294
+2+10|RC02|Team Leader|Beneficios|4063
+2+10|RC02|Team Leader|Fretado|747
+2+10|RC02|Team Leader|Refeição|924
+2+10|RC03|Team Leader|Salários|13061
+2+10|RC03|Team Leader|Beneficios|4063
+2+10|RC03|Team Leader|Fretado|973
+2+10|RC03|Team Leader|Refeição|0
+2+10|RJ02|Team Leader|Salários|12069
+2+10|RJ02|Team Leader|Beneficios|2197
+2+10|RJ02|Team Leader|Fretado|674
+2+10|RJ02|Team Leader|Refeição|913
+2+10|RS01|Team Leader|Salários|11506
+2+10|RS01|Team Leader|Beneficios|2851
+2+10|RS01|Team Leader|Fretado|2044
+2+10|RS01|Team Leader|Refeição|892
+2+10|RT01|Team Leader|Salários|14086
+2+10|RT01|Team Leader|Beneficios|4063
+2+10|RT01|Team Leader|Fretado|1294
+2+10|RT01|Team Leader|Refeição|684
+2+10|SC02|Team Leader|Salários|13610
+2+10|SC02|Team Leader|Beneficios|4063
+2+10|SC02|Team Leader|Fretado|694
+2+10|SC02|Team Leader|Refeição|614
+2+10|SP02|Team Leader|Salários|13610
+2+10|SP02|Team Leader|Beneficios|4063
+2+10|SP02|Team Leader|Fretado|1373
+2+10|SP02|Team Leader|Refeição|779
+2+10|RS02|Team Leader|Salários|12069
+2+10|RS02|Team Leader|Beneficios|4063
+2+10|RS02|Team Leader|Fretado|674
+2+10|RS02|Team Leader|Refeição|913
+2+10|SP04|Team Leader|Salários|13541
+2+10|SP04|Team Leader|Beneficios|4063
+2+10|SP04|Team Leader|Fretado|1432
+2+10|SP04|Team Leader|Refeição|577
+2+10|SP06|Team Leader|Salários|13061
+2+10|SP06|Team Leader|Beneficios|4063
+2+10|SP06|Team Leader|Fretado|951
+2+10|SP06|Team Leader|Refeição|596
+2+10|RS03|Team Leader|Salários|13610
+2+10|RS03|Team Leader|Beneficios|4063
+2+10|RS03|Team Leader|Fretado|694
+2+10|RS03|Team Leader|Refeição|614
+2+10|SP09|Team Leader|Salários|11249
+2+10|SP09|Team Leader|Beneficios|4063
+2+10|SP09|Team Leader|Fretado|1887
+2+10|SP09|Team Leader|Refeição|1388
+2+10|SP10|Team Leader|Salários|13061
+2+10|SP10|Team Leader|Beneficios|4063
+2+10|SP10|Team Leader|Fretado|938
+2+10|SP10|Team Leader|Refeição|779
+2+10|SP11|Team Leader|Salários|13061
+2+10|SP11|Team Leader|Beneficios|4063
+2+10|SP11|Team Leader|Fretado|1244
+2+10|SP11|Team Leader|Refeição|786
+2+10|SP14|Team Leader|Salários|18776
+2+10|SP14|Team Leader|Beneficios|4063
+2+10|SP14|Team Leader|Fretado|1563
+2+10|SP14|Team Leader|Refeição|765
+2+10|SP15|Team Leader|Salários|12386
+2+10|SP15|Team Leader|Beneficios|4063
+2+10|SP15|Team Leader|Fretado|1482
+2+10|SP15|Team Leader|Refeição|1188
+2+10|SP18|Team Leader|Salários|14602
+2+10|SP18|Team Leader|Beneficios|4063
+2+10|SP18|Team Leader|Fretado|1008
+2+10|SP18|Team Leader|Refeição|747
+2+10|SP19|Team Leader|Salários|14602
+2+10|SP19|Team Leader|Beneficios|4063
+2+10|SP19|Team Leader|Fretado|1021
+2+10|SP19|Team Leader|Refeição|694
+2+10|SP21|Team Leader|Salários|14500
+2+10|SP21|Team Leader|Beneficios|4063
+2+10|SP21|Team Leader|Fretado|1144
+2+10|SP21|Team Leader|Refeição|791
+2+10|SP25|Team Leader|Salários|14317
+2+10|SP25|Team Leader|Beneficios|4063
+2+10|SP25|Team Leader|Fretado|1009
+2+10|SP25|Team Leader|Refeição|921
+2+10|SP24|Team Leader|Salários|11176
+2+10|SP24|Team Leader|Beneficios|3155
+2+10|SP24|Team Leader|Fretado|1076
+2+10|SP24|Team Leader|Refeição|1179
+2+10|SP26|Team Leader|Salários|14317
+2+10|SP26|Team Leader|Beneficios|4063
+2+10|SP26|Team Leader|Fretado|962
+2+10|SP26|Team Leader|Refeição|1050
+2+10|SP27|Team Leader|Salários|14317
+2+10|SP27|Team Leader|Beneficios|4063
+2+10|SP27|Team Leader|Fretado|1693
+2+10|SP27|Team Leader|Refeição|1136
+2+10|SP28|Team Leader|Salários|11176
+2+10|SP28|Team Leader|Beneficios|3155
+2+10|SP28|Team Leader|Fretado|1076
+2+10|SP28|Team Leader|Refeição|1179
+2+10|ES01|Team Leader|Salários|11176
+2+10|ES01|Team Leader|Beneficios|3155
+2+10|ES01|Team Leader|Fretado|1076
+2+10|ES01|Team Leader|Refeição|1179
+2+10|SP29|Team Leader|Salários|11131
+2+10|SP29|Team Leader|Beneficios|4063
+2+10|SP29|Team Leader|Fretado|1887
+2+10|SP29|Team Leader|Refeição|1388
+2+10|SP30|Team Leader|Salários|11506
+2+10|SP30|Team Leader|Beneficios|2851
+2+10|SP30|Team Leader|Fretado|1076
+2+10|SP30|Team Leader|Refeição|2004
+2+10|SP31|Team Leader|Salários|14317
+2+10|SP31|Team Leader|Beneficios|4063
+2+10|SP31|Team Leader|Fretado|920
+2+10|SP31|Team Leader|Refeição|1020
+2+10|DF02|Team Leader|Salários|11506
+2+10|DF02|Team Leader|Beneficios|2851
+2+10|DF02|Team Leader|Fretado|1076
+2+10|DF02|Team Leader|Refeição|1179
+2+10|DF03|Team Leader|Salários|11538
+2+10|DF03|Team Leader|Beneficios|3155
+2+10|DF03|Team Leader|Fretado|1259
+2+10|DF03|Team Leader|Refeição|455
+2+10|SP33|Team Leader|Salários|14317
+2+10|SP33|Team Leader|Beneficios|4063
+2+10|SP33|Team Leader|Fretado|920
+2+10|SP33|Team Leader|Refeição|1020`;
+
+const CATS = ['Salários','Benefícios','Transporte','Alimentação'];
+const COLORS_BAR = ['#FFE600','#9ca3af','#1a1a1a','#3b82f6'];
+const PIE_COLORS = ['#FFE600','#9ca3af','#1a1a1a','#3b82f6'];
+
+let currency = 'BRL';
+let barChart = null;
+let pieChart = null;
+let allData = [];
+
+function parseData(){
+  return RAW.trim().split('\n').map(line=>{
+    const [versao,rawFc,cargo,cat,valor]=line.split('|');
+    const fc=rawFc.replace(/^BR/,'');
+    const meta=FC_MAP[fc]||{estado:'Outros',tipologia:'Outros'};
+    const categoria=cat==='Salários'?'Salários':cat==='Beneficios'?'Benefícios':cat==='Fretado'?'Transporte':'Alimentação';
+    const cargoTrad=cargo==='Representante de Envios'?'Rep. de Envios':cargo;
+    return{versao,fc,cargo:cargoTrad,categoria,valor:parseInt(valor),estado:meta.estado,tipologia:meta.tipologia};
+  });
+}
+
+function fmt(v){
+  if(currency==='USD') return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v/5.5);
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v);
+}
+
+function unique(arr){return[...new Set(arr)].sort();}
+
+function populateSelects(){
+  const versoes=unique(allData.map(d=>d.versao));
+  const cargos=unique(allData.map(d=>d.cargo));
+  const estados=unique(allData.map(d=>d.estado));
+  const fcs=unique(allData.map(d=>d.fc));
+  const tips=unique(allData.map(d=>d.tipologia));
+  fillSelect('f-versao',versoes);
+  fillSelect('f-cargo',cargos);
+  fillSelect('f-estado',estados);
+  fillSelect('f-fc',fcs);
+  fillSelect('f-tipologia',tips);
+}
+
+function fillSelect(id,opts){
+  const sel=document.getElementById(id);
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todos</option>'+opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+
+function getFiltered(){
+  const v=document.getElementById('f-versao').value;
+  const c=document.getElementById('f-cargo').value;
+  const e=document.getElementById('f-estado').value;
+  const f=document.getElementById('f-fc').value;
+  const t=document.getElementById('f-tipologia').value;
+  return allData.filter(d=>
+    (!v||d.versao===v)&&(!c||d.cargo===c)&&(!e||d.estado===e)&&(!f||d.fc===f)&&(!t||d.tipologia===t)
+  );
+}
+
+function isFiltered(){
+  return ['f-versao','f-cargo','f-estado','f-fc','f-tipologia'].some(id=>document.getElementById(id).value!=='');
+}
+
+function group(data){
+  const map={};
+  data.forEach(d=>{
+    const k=`${d.fc}||${d.versao}||${d.cargo}`;
+    if(!map[k]) map[k]={fc:d.fc,versao:d.versao,cargo:d.cargo,estado:d.estado,tipologia:d.tipologia,Salários:0,'Benefícios':0,Transporte:0,'Alimentação':0};
+    map[k][d.categoria]+=d.valor;
+  });
+  return Object.values(map).map(r=>({...r,total:r.Salários+r['Benefícios']+r.Transporte+r['Alimentação']}))
+    .filter(r=>r.total>=1000).sort((a,b)=>b.total-a.total);
+}
+
+function applyFilters(){
+  const filtered=getFiltered();
+  const grouped=group(filtered);
+  const active=isFiltered();
+  document.getElementById('btnClear').style.display=active?'block':'none';
+  document.getElementById('empty-state').style.display=!active?'flex':'none';
+  document.getElementById('dashboard-content').style.display=active?'block':'none';
+  if(!active) return;
+  updateKPIs(grouped);
+  updateBarChart(grouped);
+  updatePieChart(grouped);
+  updateTable(grouped);
+}
+
+function updateKPIs(grouped){
+  if(!grouped.length){
+    ['kpi-avg','kpi-max','kpi-min','kpi-count'].forEach(id=>document.getElementById(id).textContent='—');
+    return;
+  }
+  const avg=grouped.reduce((s,r)=>s+r.total,0)/grouped.length;
+  document.getElementById('kpi-avg').textContent=fmt(avg);
+  document.getElementById('kpi-avg-sub').textContent=`${grouped.length} unidades`;
+  document.getElementById('kpi-max').textContent=fmt(grouped[0].total);
+  document.getElementById('kpi-max-sub').textContent=`${grouped[0].fc} · ${grouped[0].estado}`;
+  document.getElementById('kpi-min').textContent=fmt(grouped[grouped.length-1].total);
+  document.getElementById('kpi-min-sub').textContent=`${grouped[grouped.length-1].fc} · ${grouped[grouped.length-1].estado}`;
+  document.getElementById('kpi-count').textContent=grouped.length;
+  document.getElementById('table-badge').textContent=`Taxa de câmbio: 5,50 · ${grouped.length} registros`;
+}
+
+function updateBarChart(grouped){
+  const topN=parseInt(document.getElementById('f-topn').value);
+  const data=grouped.slice(0,topN);
+  const labels=data.map(r=>r.fc);
+  const datasets=CATS.map((cat,i)=>({label:cat,data:data.map(r=>r[cat]),backgroundColor:COLORS_BAR[i],stack:'a'}));
+  const h=Math.max(300,data.length*36);
+  const canvas=document.getElementById('barChart');
+  canvas.style.height=h+'px';
+  canvas.height=h;
+  if(barChart) barChart.destroy();
+  barChart=new Chart(canvas,{
+    type:'bar',
+    data:{labels,datasets},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.raw)}`}}},
+      scales:{x:{stacked:true,ticks:{callback:v=>currency==='BRL'?`R$${Math.round(v/1000)}k`:`$${Math.round(v/5500)}k`,font:{size:10}}},y:{stacked:true,ticks:{font:{size:11,weight:'bold'}}}}
+    }
+  });
+}
+
+function updatePieChart(grouped){
+  if(!grouped.length) return;
+  const sum={Salários:0,'Benefícios':0,Transporte:0,'Alimentação':0};
+  grouped.forEach(r=>{sum.Salários+=r.Salários;sum['Benefícios']+=r['Benefícios'];sum.Transporte+=r.Transporte;sum['Alimentação']+=r['Alimentação'];});
+  const n=grouped.length;
+  const vals=CATS.map(c=>sum[c]/n);
+  const total=vals.reduce((a,b)=>a+b,0);
+  if(pieChart) pieChart.destroy();
+  pieChart=new Chart(document.getElementById('pieChart'),{
+    type:'doughnut',
+    data:{labels:CATS,datasets:[{data:vals,backgroundColor:PIE_COLORS,borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmt(ctx.raw)}`}}}}
+  });
+  const legend=document.getElementById('pieLegend');
+  legend.innerHTML=CATS.map((cat,i)=>`
+    <div class="pie-item">
+      <div style="display:flex;align-items:center">
+        <div class="pie-dot" style="background:${PIE_COLORS[i]}"></div>
+        <span class="pie-name">${cat}</span>
+      </div>
+      <span class="pie-val">${fmt(vals[i])}</span>
+    </div>`).join('');
+}
+
+function updateTable(grouped){
+  const tbody=document.getElementById('tableBody');
+  tbody.innerHTML=grouped.map((r,i)=>`
+    <tr>
+      <td class="fc">${r.fc}</td>
+      <td class="muted">${r.versao}</td>
+      <td style="font-style:italic;color:#444">${r.cargo}</td>
+      <td>${r.estado}</td>
+      <td class="muted">${r.tipologia}</td>
+      <td class="right">${fmt(r.Salários)}</td>
+      <td class="right">${fmt(r['Benefícios'])}</td>
+      <td class="right">${fmt(r.Transporte)}</td>
+      <td class="right">${fmt(r['Alimentação'])}</td>
+      <td class="total">${fmt(r.total)}</td>
+    </tr>`).join('');
+}
+
+function setCurrency(c){
+  currency=c;
+  document.querySelectorAll('.currency-switch button').forEach(b=>{
+    b.classList.toggle('active',b.textContent===c);
+  });
+  applyFilters();
+}
+
+function clearFilters(){
+  ['f-versao','f-cargo','f-estado','f-fc','f-tipologia'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+}
+
+allData=parseData();
+populateSelects();
+applyFilters();
+</script>
+</body>
 </html>
